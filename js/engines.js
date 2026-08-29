@@ -655,13 +655,22 @@ export const SKILLS = {
     validate(p) { if (!p.question) return '需要提供问题'; if (!p.spread_type) return '需要指定牌阵'; return null; } },
 };
 
+// 模型漏传可选参数时的默认值（防止无限报错重试）
+const PARAM_DEFAULTS = {
+  liuyao_divination: { method: 'random' },
+  meihua_divination: { method: 'time_based' },
+  tarot_reading: { spread_type: 'three_card' },
+  lenormand_reading: { spread_type: 'three_card' },
+};
+
 export function runSkill(toolName, params) {
   const skill = SKILLS[toolName];
   if (!skill) return { error: `未找到技能: ${toolName}` };
-  const err = skill.validate(params || {});
+  const p = { ...(PARAM_DEFAULTS[toolName] || {}), ...(params || {}) };
+  const err = skill.validate(p);
   if (err) return { error: err };
   try {
-    return skill.execute(params || {});
+    return skill.execute(p);
   } catch (e) {
     return { error: String(e && e.message || e), skill_name: skill.label };
   }

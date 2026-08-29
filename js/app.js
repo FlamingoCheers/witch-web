@@ -8,7 +8,7 @@ import { SYSTEM_PROMPT } from './prompt.js';
 
 const $ = (id) => document.getElementById(id);
 const screen = $('screen');
-const topTitle = $('tb-name'), topSub = $('tb-cfg'), topBack = $('btn-back'), topGear = $('btn-gear'), topAvatar = null;
+const topTitle = $('tb-name'), topSub = $('tb-cfg'), topBack = $('btn-back'), topGear = $('btn-gear'), topAvatar = document.querySelector('#topbar .avatar');
 const statusChip = $('status-chip'), inputWrap = $('inputwrap'), inputEl = $('chat-input'), sendBtn = $('btn-send');
 const toast = $('toast');
 
@@ -69,6 +69,8 @@ function msgNode(m) {
     row.innerHTML = `<div class="bubble user-bubble">${mdToHtml(m.content)}</div>`;
   } else if (m.role === 'tool') {
     return null; // 工具原始结果不直接展示
+  } else if (m.toolCalls && m.toolCalls.length) {
+    return null; // 中间轮次（带工具调用）不直接展示，只展示最终回复
   } else {
     row.className = 'msg witch' + (m.isError ? ' error' : '');
     const body = m.isError ? m.content : mdToHtml(m.content);
@@ -134,28 +136,14 @@ async function send(text) {
     for (let turn = 0; turn < 6; turn++) {
       const persona = Store.persona() || SYSTEM_PROMPT;
       const history = Store.messages().slice(-30).map(({ role, content, name, toolCalls, callId }) => ({ role, content, name, toolCalls, callId }));
-
-      let liveEl = null, liveBody = null, gotFirst = false;
-      const onDelta = (chunk, full) => {
-        if (!gotFirst) {
-          stopWaiting();
-          liveEl = document.createElement('div');
-          liveEl.className = 'msg witch';
-          liveEl.innerHTML = '<div class="avatar">巫</div><div class="bubble witch-bubble"><span class="live"></span><span class="cursor">▌</span></div>';
-          screen.appendChild(liveEl);
-          liveBody = liveEl.querySelector('.live');
-          gotFirst = true;
-        }
-        liveBody.innerHTML = mdToHtml(full);
-        scrollBottom();
-      };
-      const r = await chat(cfg, history, persona, TOOLS, onDelta);
+      // 最多 5 轮工具调用，最后一轮强制不带工具，保证一定出解读结果
+      const toolsThisTurn = turn < 5 ? TOOLS : null;
+      const r = await chat(cfg, history, persona, toolsThisTurn, null);
 
       if (r.toolCalls && r.toolCalls.length) {
         stopWaiting();
         const asst = { role: 'assistant', content: r.text || '', toolCalls: r.toolCalls, ts: Date.now() };
         Store.appendMessage(asst);
-        if (r.text) appendNode(asst);
         for (const tc of r.toolCalls) {
           let args = {};
           try { args = JSON.parse(tc.arguments || '{}'); } catch { args = {}; }
@@ -211,7 +199,7 @@ function setTop(title, sub, { back = false, gear = false, avatar = false } = {})
   topSub.textContent = sub || '';
   topBack.classList.toggle('hidden', !back);
   topGear.classList.toggle('hidden', !gear);
-  if (topAvatar) topAvatar.classList.toggle('hidden', !avatar);
+  topAvatar.classList.toggle('hidden', !avatar);
 }
 function showChatBar(show) {
   inputWrap.classList.toggle('hidden', !show);

@@ -163,7 +163,6 @@ async function send(text) {
       if (r.text) {
         const asst = { role: 'assistant', content: r.text, ts: Date.now() };
         Store.appendMessage(asst);
-        if (liveEl) { liveEl.remove(); }
         appendNode(asst);
       }
       Store.flushMessages();

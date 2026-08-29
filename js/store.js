@@ -68,7 +68,7 @@ export const Store = {
 
   sessions() { return LS.get('witch.sessions', []); },
   activeSessionId() { return LS.get('witch.activeSessionId'); },
-  messages() { return LS.get('witch.msgs_' + this.activeSessionId(), []); },
+  messages() { return this._pendingMsgs ?? LS.get('witch.msgs_' + this.activeSessionId(), []); },
 
   newSession(persist = true) {
     if (persist) this.flushMessages();

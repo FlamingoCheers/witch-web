@@ -8,8 +8,8 @@ import { SYSTEM_PROMPT } from './prompt.js';
 
 const $ = (id) => document.getElementById(id);
 const screen = $('screen');
-const topTitle = $('top-title'), topSub = $('top-sub'), topBack = $('top-back'), topGear = $('top-gear'), topAvatar = $('top-avatar');
-const statusChip = $('status-chip'), inputWrap = $('inputwrap'), inputEl = $('msg-input'), sendBtn = $('send-btn');
+const topTitle = $('tb-name'), topSub = $('tb-cfg'), topBack = $('btn-back'), topGear = $('btn-gear'), topAvatar = null;
+const statusChip = $('status-chip'), inputWrap = $('inputwrap'), inputEl = $('chat-input'), sendBtn = $('btn-send');
 const toast = $('toast');
 
 let routeStack = ['chat'];
@@ -211,7 +211,7 @@ function setTop(title, sub, { back = false, gear = false, avatar = false } = {})
   topSub.textContent = sub || '';
   topBack.classList.toggle('hidden', !back);
   topGear.classList.toggle('hidden', !gear);
-  topAvatar.classList.toggle('hidden', !avatar);
+  if (topAvatar) topAvatar.classList.toggle('hidden', !avatar);
 }
 function showChatBar(show) {
   inputWrap.classList.toggle('hidden', !show);
@@ -534,10 +534,7 @@ function sessionsScreen() {
 }
 
 // ---------- 顶栏按钮绑定 ----------
-topAvatar.addEventListener('click', () => push(sessionsScreen));
-topTitle.parentElement && topTitle.addEventListener('click', () => {
-  if (routeStack.length === 1) push(sessionsScreen);
-});
+topTitle.addEventListener('click', () => { if (routeStack.length === 1) push(sessionsScreen); });
 
 // ---------- PWA ----------
 if ('serviceWorker' in navigator) {

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#170a38">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="女巫">
+<meta name="description" content="七门术数 · 本地起卦 · AI 说梦话 · 千禧风界面 — 占卜引擎在你的浏览器本地运行，聊天记录只保存在这台设备上。">
+<title>这个女巫在说梦话吧</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+<link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+
+<div id="bg" aria-hidden="true">
+  <div id="bg-image"></div>
+  <div id="bg-nebula"></div>
+  <div id="stars"></div>
+  <div id="grid-floor"></div>
+  <div class="deco float1">🦋</div>
+  <div class="deco float2">✦</div>
+</div>
+
+<div id="app">
+  <header id="topbar" class="glass hidden">
+    <button id="btn-back" class="icon-btn" aria-label="返回">←</button>
+    <div class="avatar">巫</div>
+    <div class="who">
+      <div class="name" id="tb-name">女巫</div>
+      <div class="cfg" id="tb-cfg"></div>
+    </div>
+    <button id="btn-gear" class="icon-btn" aria-label="设置">⚙</button>
+  </header>
+
+  <main id="screen" class="chat" tabindex="-1"></main>
+
+  <div id="status-chip" class="hidden"></div>
+
+  <footer id="inputwrap" class="hidden">
+    <div class="inputbar glass">
+      <input id="chat-input" type="text" placeholder="问问运势、聊聊人生…" autocomplete="off" enterkeyhint="send">
+      <button id="btn-send" class="sendbtn" aria-label="发送">问</button>
+    </div>
+    <div class="homebar"></div>
+  </footer>
+</div>
+
+<div id="toast" class="hidden"></div>
+
+<script src="./vendor/astronomy.js"></script>
+<script src="./vendor/lunar.js"></script>
+<script type="module" src="./js/app.js"></script>
+</body>
+</html>

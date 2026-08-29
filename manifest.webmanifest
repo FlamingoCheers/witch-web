@@ -1,0 +1,16 @@
+{
+  "name": "这个女巫在说梦话吧",
+  "short_name": "女巫",
+  "description": "六门术数 · 纯本地排盘 · 云端 AI 解读",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#170a38",
+  "theme_color": "#170a38",
+  "icons": [
+    { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "./icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

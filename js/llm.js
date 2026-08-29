@@ -1,7 +1,7 @@
 // ===== LLM 客户端：三协议流式 + 工具调用 =====
 const trimSlash = (s) => (s || '').replace(/\/+$/, '');
 
-function sseReader(res, onEvent) {
+async function sseReader(res, onEvent) {
   // 返回 Promise<void>；onEvent(type, data)  type='data'|'done'
   const reader = res.body.getReader();
   const dec = new TextDecoder('utf-8');

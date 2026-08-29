@@ -1,5 +1,5 @@
 // Service Worker：全量预缓存，离线可用
-const CACHE = 'witch-v1.0.2';
+const CACHE = 'witch-v1.0.3';
 const ASSETS = [
   './',
   './index.html',

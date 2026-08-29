@@ -1,28 +1,38 @@
 // ===== LLM 客户端：三协议流式 + 工具调用 =====
 const trimSlash = (s) => (s || '').replace(/\/+$/, '');
 
-async function sseReader(res, onEvent) {
+async function sseReader(res, onEvent, idleMs = 45000) {
   // 返回 Promise<void>；onEvent(type, data)  type='data'|'done'
+  // onEvent('data', data) 返回 true 表示流结束；
+  // 连续 idleMs 毫秒无数据则主动取消（防止服务端不发 [DONE] / 网络静默断流导致永远挂起）
   const reader = res.body.getReader();
   const dec = new TextDecoder('utf-8');
   let buf = '';
-  for (;;) {
-    const { value, done } = await reader.read();
-    if (done) break;
-    buf += dec.decode(value, { stream: true });
-    let idx;
-    while ((idx = buf.indexOf('\n')) >= 0) {
-      let line = buf.slice(0, idx);
-      buf = buf.slice(idx + 1);
-      if (line.endsWith('\r')) line = line.slice(0, -1);
-      if (!line) continue;
-      if (line.startsWith('data:')) {
-        const data = line.slice(5).trim();
-        if (data === '[DONE]') { onEvent('done'); return; }
-        onEvent('data', data);
+  let timer = null;
+  const arm = () => { timer = setTimeout(() => { timer = null; try { reader.cancel(); } catch { /* ignore */ } }, idleMs); };
+  const disarm = () => { if (timer) { clearTimeout(timer); timer = null; } };
+  try {
+    for (;;) {
+      arm();
+      let ev;
+      try { ev = await reader.read(); } finally { disarm(); }
+      const { value, done } = ev;
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let idx;
+      while ((idx = buf.indexOf('\n')) >= 0) {
+        let line = buf.slice(0, idx);
+        buf = buf.slice(idx + 1);
+        if (line.endsWith('\r')) line = line.slice(0, -1);
+        if (!line) continue;
+        if (line.startsWith('data:')) {
+          const data = line.slice(5).trim();
+          if (data === '[DONE]') { onEvent('done'); return; }
+          if (onEvent('data', data) === true) { onEvent('done'); return; }
+        }
       }
     }
-  }
+  } finally { disarm(); }
   onEvent('done');
 }
 
@@ -80,6 +90,7 @@ async function chatOpenAI(cfg, messages, systemPrompt, tools, onDelta, signal) {
         }
       }
     }
+    if (choice.finish_reason) return true;
   });
   const toolCalls = [...tcMap.values()].filter((t) => t.name);
   return { text, toolCalls };
@@ -156,6 +167,7 @@ async function chatAnthropic(cfg, messages, systemPrompt, tools, onDelta, signal
         if (cur) cur.arguments += d.partial_json || '';
       }
     } else if (j.type === 'content_block_stop') { curTextIdx = null; curToolIdx = null; }
+    if (j.type === 'message_stop') return true;
   });
   const toolCalls = [...tcMap.values()].filter((t) => t.name);
   return { text, toolCalls };
@@ -235,7 +247,8 @@ async function chatGemini(cfg, messages, systemPrompt, tools, onDelta, signal) {
     if (type !== 'data') return;
     let j;
     try { j = JSON.parse(data); } catch { return; }
-    const parts = j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts || [];
+    const cand = j.candidates && j.candidates[0];
+    const parts = cand && cand.content && cand.content.parts || [];
     for (const p of parts) {
       if (p.text) { text += p.text; onDelta && onDelta(p.text, text); }
       if (p.functionCall) toolCalls.push({
@@ -244,6 +257,7 @@ async function chatGemini(cfg, messages, systemPrompt, tools, onDelta, signal) {
         arguments: JSON.stringify(p.functionCall.args || {}),
       });
     }
+    if (cand && cand.finishReason) return true;
   });
   return { text, toolCalls };
 }

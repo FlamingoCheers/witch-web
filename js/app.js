@@ -546,5 +546,6 @@ Store.init();
 applyBackground();
 setActiveBar();
 renderChat();
+$('topbar').classList.remove('hidden');
 setTop('女巫', '', { gear: true, avatar: true });
 showChatBar(true);

@@ -12,7 +12,7 @@ const topTitle = $('tb-name'), topSub = $('tb-cfg'), topBack = $('btn-back'), to
 const statusChip = $('status-chip'), inputWrap = $('inputwrap'), inputEl = $('chat-input'), sendBtn = $('btn-send');
 const toast = $('toast');
 
-let routeStack = ['chat'];
+let routeStack = [];
 let sending = false;
 let waitTimer = null, waitIdx = 0, waitEl = null;
 let pinned = true;
@@ -219,9 +219,9 @@ function el(html) {
   d.innerHTML = html.trim();
   return d.firstElementChild;
 }
-function page(title, subtitle) {
+function page(title, subtitle, topOpts = { back: true }) {
   screen.innerHTML = '';
-  setTop(title, subtitle || '', { back: true });
+  setTop(title, subtitle || '', topOpts);
   showChatBar(false);
   showStatus('');
   const wrap = el('<div class="page"></div>');
@@ -483,7 +483,7 @@ function aboutScreen() {
 
 // ---------- 会话列表 ----------
 function sessionsScreen() {
-  const w = page('对话历史', '女巫 · 会话管理');
+  const w = page('对话历史', '女巫 · 会话管理', { back: false });
   for (const s of Store.sessions()) {
     const active = s.id === Store.activeSessionId();
     const d = new Date(s.updatedAt);
@@ -503,36 +503,41 @@ function sessionsScreen() {
         return;
       }
       Store.openSession(s.id);
-      routeStack = ['chat'];
-      renderChat(); setTop('女巫', '', { gear: true, avatar: true });
-      showChatBar(true);
-      setActiveBar();
+      openChat();
     });
     w.appendChild(row);
   }
   const add = el('<div class="btn ghost" style="margin-top:12px">＋ 新建对话</div>');
   add.addEventListener('click', () => {
     Store.newSession();
-    routeStack = ['chat'];
-    renderChat(); setTop('女巫', '', { gear: true, avatar: true });
-    showChatBar(true);
+    openChat();
   });
   w.appendChild(add);
 }
 
-// ---------- 顶栏按钮绑定 ----------
-topTitle.addEventListener('click', () => { if (routeStack.length === 1) push(sessionsScreen); });
+// ---------- 对话页（从会话列表进入，← 返回列表） ----------
+function chatHome() {
+  renderChat();
+  setTop('女巫', '', { back: true, gear: true, avatar: true });
+  setActiveBar();
+  showChatBar(true);
+}
+function openChat() {
+  if (routeStack[routeStack.length - 1] === chatHome) return;
+  if (routeStack.length === 1) push(chatHome);
+  else { routeStack = [sessionsScreen, chatHome]; render(); }
+}
 
 // ---------- PWA ----------
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
 }
 
-// ---------- 启动 ----------
+// ---------- 启动（会话列表为首页） ----------
 Store.init();
 applyBackground();
 setActiveBar();
-renderChat();
+routeStack = [sessionsScreen];
+render();
 $('topbar').classList.remove('hidden');
-setTop('女巫', '', { gear: true, avatar: true });
-showChatBar(true);
+showChatBar(false);
